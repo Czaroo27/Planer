@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import "tailwindcss/tailwind.css";
 import Sidebar from "./Sidebar";
 import TaskList from "./TaskList";
+import { useDisclosure } from '@nextui-org/react';
 
-const MainView = () => {
+export default function MainView() {
     const [tasks, setTasks] = useState(() => {
         const savedTasks = localStorage.getItem("tasks");
         return savedTasks ? JSON.parse(savedTasks) : [];
@@ -14,6 +15,7 @@ const MainView = () => {
         return savedPockets ? JSON.parse(savedPockets) : [];
     });
     const [currentPocket, setCurrentPocket] = useState(null);
+    const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
     useEffect(() => {
         localStorage.setItem("tasks", JSON.stringify(tasks));
@@ -35,7 +37,7 @@ const MainView = () => {
                 id: Date.now(),
                 text: newTask,
                 completed: false,
-                pocket: currentPocket.name, // Change this line
+                pocket: currentPocket.name,
             };
             setTasks((prevTasks) => [...prevTasks, newTaskObject]);
             setNewTask("");
@@ -70,26 +72,29 @@ const MainView = () => {
     };
 
     return (
-        <div className="flex h-svh">
-            <Sidebar
-                pockets={pockets}
-                setPockets={setPockets}
-                setCurrentPocket={setCurrentPocket}
-                currentPocket={currentPocket}
-                deleteTasksForPocket={deleteTasksForPocket} // Ensure this line is correct
-            />
-            <TaskList
-                tasks={tasks}
-                newTask={newTask}
-                setNewTask={setNewTask}
-                addTask={addTask}
-                toggleTaskCompletion={toggleTaskCompletion}
-                currentPocket={currentPocket}
-                editTask={editTask}
-                deleteTask={deleteTask}
-            />
-        </div>
+        <React.Fragment>
+            <div className="flex h-svh">
+                <Sidebar
+                    pockets={pockets}
+                    setPockets={setPockets}
+                    setCurrentPocket={setCurrentPocket}
+                    currentPocket={currentPocket}
+                    deleteTasksForPocket={deleteTasksForPocket}
+                    isOpen={isOpen}
+                    onOpen={onOpen}
+                    onOpenChange={onOpenChange}
+                />
+                <TaskList
+                    tasks={tasks}
+                    newTask={newTask}
+                    setNewTask={setNewTask}
+                    addTask={addTask}
+                    toggleTaskCompletion={toggleTaskCompletion}
+                    currentPocket={currentPocket}
+                    editTask={editTask}
+                    deleteTask={deleteTask}
+                />
+            </div>
+        </React.Fragment>
     );
-};
-
-export default MainView;
+}
