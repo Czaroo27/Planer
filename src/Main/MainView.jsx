@@ -1,146 +1,100 @@
-import React, { useState } from "react";
-import "./style.css"; // Wspólny plik CSS dla stylów
+import React, { useState, useEffect } from "react";
+import "tailwindcss/tailwind.css";
+import Sidebar from "./Sidebar";
+import TaskList from "./TaskList";
+import { useDisclosure } from '@nextui-org/react';
 
-const MainView = () => {
-  const [tasks, setTasks] = useState([
-    { id: 1, text: "Clean up the kitchen", completed: false },
-  ]);
-  const [newTask, setNewTask] = useState("");
+export default function MainView() {
+    const [tasks, setTasks] = useState(() => {
+        const savedTasks = localStorage.getItem("tasks");
+        return savedTasks ? JSON.parse(savedTasks) : [];
+    });
+    const [newTask, setNewTask] = useState("");
+    const [pockets, setPockets] = useState(() => {
+        const savedPockets = localStorage.getItem("pockets");
+        return savedPockets ? JSON.parse(savedPockets) : [];
+    });
+    const [currentPocket, setCurrentPocket] = useState(null);
+    const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
-  const addTask = () => {
-    if (newTask.trim() !== "") {
-      const newTaskObject = {
-        id: Date.now(), // Unikalny identyfikator
-        text: newTask,
-        completed: false,
-      };
+    useEffect(() => {
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+    }, [tasks]);
 
-      // Dodajemy nowe zadanie do istniejącej listy zadań
-      setTasks((prevTasks) => [...prevTasks, newTaskObject]);
+    useEffect(() => {
+        localStorage.setItem("pockets", JSON.stringify(pockets));
+        if (currentPocket && !pockets.some(pocket => pocket.name === currentPocket.name)) {
+            setCurrentPocket(null);
+        }
+        if (!currentPocket && pockets.length > 0) {
+            setCurrentPocket(pockets[0]);
+        }
+    }, [pockets]);
 
-      setNewTask(""); // Czyszczenie pola tekstowego
-    }
-  };
+    const addTask = () => {
+        if (newTask.trim() !== "") {
+            const newTaskObject = {
+                id: Date.now(),
+                text: newTask,
+                completed: false,
+                pocket: currentPocket.name,
+            };
+            setTasks((prevTasks) => [...prevTasks, newTaskObject]);
+            setNewTask("");
+        }
+    };
 
-  const toggleTaskCompletion = (id) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === id ? { ...task, completed: !task.completed } : task
-      )
-    );
-  };
+    const toggleTaskCompletion = (id) => {
+        setTasks((prevTasks) =>
+            prevTasks.map((task) =>
+                task.id === id ? { ...task, completed: !task.completed } : task
+            )
+        );
+    };
 
-  return (
-    <div className="main-view">
-      <div className="sidebar-nav">
-        <div className="frame">
-          <div className="text-wrapper">Pockets</div>
-          <div className="div">
-            <div className="frame-2">
-              <div className="frame-3">
-                <div className="text-wrapper-2">🏠</div>
-                <div className="text-wrapper-3">Home</div>
-              </div>
-              <div className="div-wrapper">
-                <div className="text-wrapper-4">{tasks.length}</div>
-              </div>
-            </div>
-            <div className="frame-4">
-              <div className="frame-3">
-                <div className="text-wrapper-2">🥦</div>
-                <div className="text-wrapper-5">Diet</div>
-              </div>
-              <div className="frame-5">
-                <div className="text-wrapper-6">15</div>
-              </div>
-            </div>
-          </div>
-          <div className="frame-6">
-            <div className="frame-7">
-              <div className="text-wrapper-7">+</div>
-              <div className="text-wrapper-8">Create new pocket</div>
-            </div>
-            <div className="frame-8">
-              <img className="img" src="img/frame-10.svg" alt="Frame 10" />
-              <div className="frame-9">
-                <div className="text-wrapper-9">P</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="profile">
-          <img className="rectangle" src="img/rectangle-1.svg" alt="Profile" />
-          <div className="frame-10">
-            <div className="text-wrapper-10">Claudia Doumit</div>
-            <div className="text-wrapper-11">Log out</div>
-          </div>
-        </div>
-      </div>
+    const deleteTasksForPocket = (pocketName) => {
+        setTasks((prevTasks) => prevTasks.filter(task => task.pocket !== pocketName));
+    };
 
-      {/* Main content */}
-      <div className="frame-11">
-        <div className="frame-12">
-          <div className="frame-13">
-            <p className="home">
-              <span className="span">🏠 </span>
-              <span className="text-wrapper-12">Home</span>
-            </p>
-            <p className="p">
-              Remaining {tasks.filter((t) => !t.completed).length} from{" "}
-              {tasks.length} tasks.
-            </p>
-          </div>
-          <div className="frame-14">
-            <button className="button">
-              <div className="text-wrapper-13">Show completed</div>
-            </button>
-          </div>
-        </div>
-        <div className="frame-15">
-          {tasks.map((task) => (
-            <div className="task" key={task.id}>
-              <div className="frame-16">
-                <input
-                  type="checkbox"
-                  checked={task.completed}
-                  onChange={() => toggleTaskCompletion(task.id)}
+    const editTask = (id) => {
+        const newTaskText = prompt("Edit task:");
+        if (newTaskText !== null) {
+            setTasks((prevTasks) =>
+                prevTasks.map((task) =>
+                    task.id === id ? { ...task, text: newTaskText } : task
+                )
+            );
+        }
+    };
+
+    const deleteTask = (id) => {
+        setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
+    };
+
+    return (
+        <React.Fragment>
+            <div className="flex h-svh">
+                <Sidebar
+                    pockets={pockets}
+                    setPockets={setPockets}
+                    setCurrentPocket={setCurrentPocket}
+                    currentPocket={currentPocket}
+                    deleteTasksForPocket={deleteTasksForPocket}
+                    isOpen={isOpen}
+                    onOpen={onOpen}
+                    onOpenChange={onOpenChange}
                 />
-                <div
-                  className={
-                    task.completed
-                      ? "text-wrapper-14 completed"
-                      : "text-wrapper-14"
-                  }
-                >
-                  {task.text}
-                </div>
-              </div>
-              <img className="frame-17" src="img/frame-19.svg" alt="Options" />
+                <TaskList
+                    tasks={tasks}
+                    newTask={newTask}
+                    setNewTask={setNewTask}
+                    addTask={addTask}
+                    toggleTaskCompletion={toggleTaskCompletion}
+                    currentPocket={currentPocket}
+                    editTask={editTask}
+                    deleteTask={deleteTask}
+                />
             </div>
-          ))}
-          <div className="create-task-baner">
-            <div className="frame-14">
-              <img
-                className="ph-caret-down-light"
-                src="img/ph-caret-down-light.svg"
-                alt="Expand"
-              />
-              <input
-                type="text"
-                className="task-input"
-                placeholder="Enter new task..."
-                value={newTask}
-                onChange={(e) => setNewTask(e.target.value)}
-              />
-              <button className="add-task-button" onClick={addTask}>
-                Add Task
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default MainView;
+        </React.Fragment>
+    );
+}
